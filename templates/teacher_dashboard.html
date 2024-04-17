@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard</title>
+</head>
+<body>
+    <h1>Teacher Dashboard</h1>
+    
+    <!-- Display courses -->
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Course Name</th>
+                <th>Duration</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for course in courses %}
+            <tr>
+                <td>{{ course[0] }}</td>
+                <td>{{ course[1] }}</td>
+                <td>{{ course[2] }}</td>
+                <td>
+                    <!-- Update form -->
+                    <form action="/update" method="post">
+                        <input type="hidden" name="id" value="{{ course[0] }}">
+                        <input type="text" name="name" value="{{ course[1] }}">
+                        <input type="text" name="duration" value="{{ course[2] }}">
+                        <button type="submit">Update</button>
+                    </form>
+                    <!-- Delete form -->
+                    <form action="/delete" method="post">
+                        <input type="hidden" name="id" value="{{ course[0] }}">
+                        <button type="submit">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+            <!-- Form for creating a new course -->
+            <tr>
+                <td colspan="4">
+                    <h2>Create a New Course</h2>
+                    <form action="/create" method="post">
+                        <label for="name">Course Name:</label>
+                        <input type="text" id="name" name="name" required>
+                        <label for="duration">Duration:</label>
+                        <input type="text" id="duration" name="duration" required>
+                        <button type="submit">Create</button>
+                    </form>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</body>
+</html>
