@@ -1,0 +1,19 @@
+<html>
+<head>
+    <title>Course Catalog</title>
+</head>
+<body>
+    <h1>Course Catalog</h1>
+    <ul>
+        {% for course in courses %}
+        <li>
+            {{ course.name }} - {{ course.duration }}
+            <form action="/enroll" method="post">
+                <input type="hidden" name="course_id" value="{{ course.id }}">
+                <input type="submit" value="Enroll">
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

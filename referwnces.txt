@@ -1,0 +1,4 @@
+https://www.geeksforgeeks.org/making-a-flask-app-using-a-postgresql-database/
+
+https://chat.openai.com/share/5b015f93-2536-4a0c-ac5e-c871d321d8d9
+

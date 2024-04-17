@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 import psycopg2
 
 app = Flask(__name__)
@@ -50,9 +50,35 @@ def create_courses_table_if_not_exists():
     except psycopg2.Error as e:
         print("Error creating courses table:", e)
 
+# Function to create the enrollments table if it doesn't exist
+def create_enrollments_table_if_not_exists():
+    try:
+        conn = psycopg2.connect(
+            dbname='postgres',
+            user='postgres',
+            password='2004',
+            host='localhost'
+        )
+        cur = conn.cursor()
+        cur.execute('''
+            CREATE TABLE IF NOT EXISTS enrollments (
+                id SERIAL PRIMARY KEY,
+                student_id INTEGER,
+                course_id INTEGER,
+                FOREIGN KEY (student_id) REFERENCES users(id),
+                FOREIGN KEY (course_id) REFERENCES courses(id)
+            )
+        ''')
+        conn.commit()
+        cur.close()
+        conn.close()
+    except psycopg2.Error as e:
+        print("Error creating enrollments table:", e)
+
 # Create the tables if they don't exist
 create_table_if_not_exists()
 create_courses_table_if_not_exists()
+create_enrollments_table_if_not_exists()
 
 # Route for the login page
 @app.route('/')
@@ -79,6 +105,7 @@ def login_submit():
         conn.close()
 
         if user:
+            session['username'] = username
             if 'teacher' in username:
                 return redirect(url_for('teacher_dashboard'))
             else:
@@ -130,7 +157,35 @@ def register():
 # Route for the regular dashboard
 @app.route('/student/dashboard')
 def student_dashboard():
-    return render_template('student_dashboard.html')
+    if 'username' not in session:
+        flash('You must be logged in to access this page.', 'error')
+        return redirect(url_for('login'))
+
+    try:
+        conn = psycopg2.connect(
+            dbname='postgres',
+            user='postgres',
+            password='2004',
+            host='localhost'
+        )
+        cur = conn.cursor()
+        cur.execute('''
+            SELECT courses.id, courses.name, courses.duration 
+            FROM courses 
+            INNER JOIN enrollments ON courses.id = enrollments.course_id 
+            WHERE enrollments.student_id = (
+                SELECT id FROM users WHERE username=%s
+            )
+        ''', (session['username'],))
+        courses = cur.fetchall()
+        cur.close()
+        conn.close()
+
+        return render_template('student_dashboard.html', courses=courses)
+    except psycopg2.Error as e:
+        print("Error fetching enrolled courses:", e)
+        flash('An error occurred while fetching enrolled courses. Please try again later.', 'error')
+        return redirect(url_for('login'))
 
 # Route for the teacher dashboard
 @app.route('/teacher/dashboard')
@@ -154,13 +209,18 @@ def teacher_dashboard():
         flash('An error occurred while fetching courses. Please try again later.', 'error')
         return redirect(url_for('teacher_dashboard'))
 
-# Route for creating a course
-@app.route('/create', methods=['POST'])
-def create_course():
-    name = request.form['name']
-    duration = request.form['duration']
-    print(name,duration)
+# Route for enrolling in a course
+@app.route('/enroll', methods=['POST'])
+def enroll_course():
+    if 'username' not in session:
+        flash('You must be logged in to enroll in a course.', 'error')
+        return redirect(url_for('login'))
+
+    # Get the course ID from the form
+    course_id = request.form.get('course_id')
+
     try:
+        # Retrieve the course details from the database
         conn = psycopg2.connect(
             dbname='postgres',
             user='postgres',
@@ -168,27 +228,45 @@ def create_course():
             host='localhost'
         )
         cur = conn.cursor()
-        cur.execute('INSERT INTO courses (name, price) VALUES (%s, %s)', (name, duration))
+
+        # Check if the student is already enrolled in the course
+        cur.execute('''
+            SELECT * FROM enrollments 
+            WHERE student_id = (SELECT id FROM users WHERE username=%s) 
+            AND course_id = %s
+        ''', (session['username'], course_id))
+        enrollment = cur.fetchone()
+
+        if enrollment:
+            flash('You are already enrolled in this course.', 'error')
+            return redirect(url_for('student_dashboard'))
+
+        # Enroll the student in the course
+        cur.execute('''
+            INSERT INTO enrollments (student_id, course_id) 
+            VALUES ((SELECT id FROM users WHERE username=%s), %s)
+        ''', (session['username'], course_id))
         conn.commit()
-        cur.close()
-        conn.close()
 
-
-        flash('Course created successfully!', 'success')
+        flash('Course enrolled successfully!', 'success')
     except psycopg2.Error as e:
-        print("Error creating course:", e)
-        flash('An error occurred while creating the course. Please try again later.', 'error')
+        print("Error enrolling in course:", e)
+        flash('An error occurred while enrolling in the course. Please try again later.', 'error')
 
-    return redirect(url_for('teacher_dashboard'))
+    return redirect(url_for('student_dashboard'))
 
-# Route for updating a course
-@app.route('/update', methods=['POST'])
-def update_course():
-    id = request.form['id']
-    name = request.form['name']
-    duration = request.form['duration']
+# Route for dropping a course
+@app.route('/drop', methods=['POST'])
+def drop_course():
+    if 'username' not in session:
+        flash('You must be logged in to drop a course.', 'error')
+        return redirect(url_for('login'))
+
+    # Get the course ID from the form
+    course_id = request.form.get('course_id')
 
     try:
+        # Retrieve the course details from the database
         conn = psycopg2.connect(
             dbname='postgres',
             user='postgres',
@@ -196,64 +274,21 @@ def update_course():
             host='localhost'
         )
         cur = conn.cursor()
-        cur.execute('UPDATE courses SET name=%s, duration=%s WHERE id=%s', (name, duration, id))
+
+        # Drop the course from the student's enrollment
+        cur.execute('''
+            DELETE FROM enrollments 
+            WHERE student_id = (SELECT id FROM users WHERE username=%s) 
+            AND course_id = %s
+        ''', (session['username'], course_id))
         conn.commit()
-        cur.close()
-        conn.close()
 
-        flash('Course updated successfully!', 'success')
+        flash('Course dropped successfully!', 'success')
     except psycopg2.Error as e:
-        print("Error updating course:", e)
-        flash('An error occurred while updating the course. Please try again later.', 'error')
+        print("Error dropping course:", e)
+        flash('An error occurred while dropping the course. Please try again later.', 'error')
 
-    return redirect(url_for('teacher_dashboard'))
-
-# Route for deleting a course
-@app.route('/delete', methods=['POST'])
-def delete_course():
-    id = request.form['id']
-
-    try:
-        conn = psycopg2.connect(
-            dbname='postgres',
-            user='postgres',
-            password='2004',
-            host='localhost'
-        )
-        cur = conn.cursor()
-        cur.execute('DELETE FROM courses WHERE id=%s', (id,))
-        conn.commit()
-        cur.close()
-        conn.close()
-
-        flash('Course deleted successfully!', 'success')
-    except psycopg2.Error as e:
-        print("Error deleting course:", e)
-        flash('An error occurred while deleting the course. Please try again later.', 'error')
-
-    return redirect(url_for('teacher_dashboard'))
-
-# Route for displaying the index page with all courses
-@app.route('/index')
-def index():
-    try:
-        conn = psycopg2.connect(
-            dbname='postgres',
-            user='postgres',
-            password='2004',
-            host='localhost'
-        )
-        cur = conn.cursor()
-        cur.execute('SELECT * FROM courses')
-        data = cur.fetchall()
-        cur.close()
-        conn.close()
-
-        return render_template('index.html', data=data)
-    except psycopg2.Error as e:
-        print("Error fetching courses:", e)
-        flash('An error occurred while fetching courses. Please try again later.', 'error')
-        return redirect(url_for('teacher_dashboard'))
+    return redirect(url_for('student_dashboard'))
 
 if __name__ == '__main__':
     app.run(debug=True)

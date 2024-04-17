@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard</title>
+</head>
+<body>
+    <h1>Welcome to the Student Dashboard</h1>
+    <h2>All Courses</h2>
+    <ul>
+        {% for course in courses %}
+        <li>{{ course.name }} - Duration: {{ course.duration }} hours
+            <form action="/enroll" method="POST">
+                <input type="hidden" name="course_id" value="{{ course.id }}">
+                <button type="submit">Enroll</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+    <h2>Enrolled Courses</h2>
+    <ul>
+        {% for course in enrolled_courses %}
+        <li>{{ course.name }} - Duration: {{ course.duration }} hours
+            <form action="/drop" method="POST">
+                <input type="hidden" name="course_id" value="{{ course.id }}">
+                <button type="submit">Drop</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
