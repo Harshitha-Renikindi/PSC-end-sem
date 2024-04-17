@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration Page</title>
+   <style>
+     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap');
+
+/* Resetting default styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Styling the body */
+body {
+    min-height: 100vh;
+    width: 100%;
+    background: #009579;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* Container styles */
+.container {
+    max-width: 430px;
+    width: 100%;
+    background: #fff;
+    border-radius: 7px;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Form styles */
+.form {
+    padding: 2rem;
+}
+
+.form header {
+    font-size: 2rem;
+    font-weight: 500;
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.form .form-group {
+    margin-bottom: 1.3rem;
+}
+
+.form input[type="text"],
+.form input[type="password"] {
+    height: 60px;
+    width: 100%;
+    padding: 0 15px;
+    font-size: 17px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    outline: none;
+}
+
+.form input:focus {
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+}
+
+.form button[type="submit"] {
+    height: 60px;
+    width: 100%;
+    color: #fff;
+    background: #009579;
+    font-size: 1.2rem;
+    font-weight: 500;
+    letter-spacing: 1px;
+    border: none;
+    border-radius: 6px;
+    margin-top: 1.7rem;
+    cursor: pointer;
+    transition: 0.4s;
+}
+
+.form button[type="submit"]:hover {
+    background: #006653;
+}
+
+/* Signup link styles */
+.signup {
+    font-size: 17px;
+    text-align: center;
+    margin-top: 1rem;
+}
+
+.signup a {
+    color: #009579;
+    text-decoration: none;
+}
+
+.signup a:hover {
+    text-decoration: underline;
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form">
+            <header>register</header>
+            <form action="/register" method="POST">
+                <div class="form-group">
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit">Login</button>
+            </form>
+            <div class="signup">
+                Don't have an account? <a href="#">Sign Up</a>
+            </div>
+        </div>
+</body>
+</html>
